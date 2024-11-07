@@ -1,18 +1,15 @@
 // ==UserScript==
 // @name            Instagram: Fix Image Linking
 // @name:de         Instagram: Bildlink beheben
-// @version         1.1.3
+// @version         1.1.4
 // @description     Fix Right Click on Image/Video to Download & User Mentions Button on Instagram browsing as Guest
 // @description:de  Behebe Rechtsklick aufs Bild/Video zum Herunterladen & User Verlinkungen/Erwähnungen Button auf Instagram beim Browsen als Gast
 // @icon            https://static.cdninstagram.com/rsrc.php/y4/r/QaBlI0OZiks.ico
 // @author          TalkLounge (https://github.com/TalkLounge)
 // @namespace       https://github.com/TalkLounge/instagram-fix-image-linking
 // @license         MIT
-// @match           https://www.instagram.com/p/*
-// @match           https://www.instagram.com/*/p/*
-// @match           https://www.instagram.com/reel/*
-// @match           https://www.instagram.com/*/reel/*
-// @grant           none
+// @match           https://www.instagram.com/*
+// @grant           GM_addStyle
 // ==/UserScript==
 
 // Test Image with Tags: https://www.instagram.com/jesse_tl_/p/CmlWRARrL07/
@@ -21,8 +18,19 @@
 (function () {
     'use strict';
 
+    // Hide Login Popup & Login Banner
+    GM_addStyle(`
+    body > div:has(input[type=password]), div:has(a[href^='/accounts']):has(> button) {
+        display: none !important;
+    }`);
+
+    // Only run on posts /p/ or reels /reel/
+    if (! /\/p\/|\/reel\//.test(window.location.pathname)) {
+        return;
+    }
+
     function modifyDOM() {
-        const imgs = [...document.querySelectorAll("article img[style]")].concat([...document.querySelectorAll("article video")]);
+        const imgs = [...document.querySelectorAll("main div[tabindex] img[style]")].concat([...document.querySelectorAll("main video")]);
 
         let actives = [];
         for (let i = 0; i < imgs.length; i++) {
@@ -81,15 +89,15 @@
     }
 
     function isBackButton() {
-        if (document.querySelectorAll("article button:not(ul *)[aria-label]").length <= 1) {
+        if (document.querySelectorAll("button:not(ul *)[aria-label]").length <= 1) {
             return;
         }
 
-        document.querySelector("article button:not(ul *)[aria-label]").onclick = modifyDOM;
+        document.querySelector("button:not(ul *)[aria-label]").onclick = modifyDOM;
     }
 
     function init() {
-        if (! [...document.querySelectorAll("article img[style]")].concat([...document.querySelectorAll("article video")]).length) {
+        if (![...document.querySelectorAll("main div[tabindex] img[style]")].concat([...document.querySelectorAll("main video")]).length) {
             return;
         }
 
@@ -97,7 +105,7 @@
 
         modifyDOM();
 
-        const nextButton = document.querySelector("article button:not(ul *)[aria-label]");
+        const nextButton = document.querySelector("button:not(ul *)[aria-label]");
         if (nextButton) {
             nextButton.onclick = modifyDOM;
             window.setInterval(isBackButton, 1000);
